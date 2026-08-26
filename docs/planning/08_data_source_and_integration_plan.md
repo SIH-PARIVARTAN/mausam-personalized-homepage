@@ -58,3 +58,16 @@ Per `06_system_architecture.md` §4 and `07_...md` §4: every card must carry it
 6. Only once steps 1–5 are stable: connect to the Personalization Engine (`03_...md`) for scoring/ranking.
 
 This order exists so that a data-registration delay (the most likely real risk, per Flag 5) is discovered on day 1, not day 5, while there is still time to react.
+
+## 7. Production Hardening (Adapter-Level)
+
+> **See `16_production_architecture_reassessment.md` §3 for the definitive treatment.** This section summarises only the integration-plan-relevant consequences.
+
+For the deployed backend (Render → Neon), each adapter that makes a live network call (`AQIAdapter`, `UVAdapter`) must enforce:
+
+- **Connection timeout:** 5 s — prevents a hung external API from blocking the request thread.
+- **Read timeout:** 10 s — gives the response time to arrive while still being bounded.
+- **Retry:** 1 retry on transient `TimeoutError` / 5xx, with a 0.5 s back-off — enough to handle a momentary hiccup without making the caller wait excessively.
+- **Fallback on exhaustion:** proceed to the next entry in the source priority hierarchy (§2 above) — never raise an uncaught exception to the backend.
+
+These constraints are adapter-internal; the engine never sees them and the contract from `07_...md` is unchanged. The `signal_cache` table (Neon, not SQLite in production) is where last-known-good values land after a successful live fetch, so a subsequent adapter failure gracefully degrades to `source: "cached"` rather than `source: "unavailable"` as long as a prior fetch has succeeded.

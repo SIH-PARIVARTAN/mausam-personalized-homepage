@@ -6,3 +6,4 @@ astral==3.2
 pytest==8.3.*
 httpx==0.27.*
 python-dotenv==1.0.*
+psycopg[binary,pool]==3.2.*
