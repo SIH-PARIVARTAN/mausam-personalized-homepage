@@ -19,3 +19,9 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Debug and test output artifacts (Milestone 1 Audit F-04)
+# These are never source — they are generated during development/testing.
+*_debug.txt
+*_results.txt
+tmp_*.txt
