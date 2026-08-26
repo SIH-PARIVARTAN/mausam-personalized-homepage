@@ -397,7 +397,9 @@ class AQIAdapter(Adapter):
 
 ## 7. Database/Persistence Decision
 
-**SQLite is sufficient for this MVP.** No Supabase/Firebase — there's no multi-region need, no auth, no real-time sync requirement (`06_...md` §1 storage module already scopes this narrowly), and a single demo device/session doesn't need concurrent-write handling beyond what SQLite trivially provides.
+> **SUPERSEDED — see `16_production_architecture_reassessment.md` §1.** SQLite's file-based storage does not survive Render/Railway's ephemeral filesystem in production; the backend uses **Neon (serverless Postgres)** everywhere. The reasoning below is kept for historical context but the recommendation itself no longer applies. Do not implement SQLite.
+
+~~SQLite is sufficient for this MVP.~~ No Supabase/Firebase — there's no multi-region need, no auth, no real-time sync requirement (`06_...md` §1 storage module already scopes this narrowly), and a single demo device/session doesn't need concurrent-write handling beyond what SQLite trivially provides.
 
 **Exact tables:**
 ```sql

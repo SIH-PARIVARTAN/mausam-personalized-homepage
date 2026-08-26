@@ -475,6 +475,8 @@ def write_preferences(body: PreferencesBody):
     return {"status": "ok"}
 ```
 
+> **PARTIALLY SUPERSEDED — see `16_production_architecture_reassessment.md` §4.3/§5.2.** The hardcoded `allow_origins` list below should be read from a `CORS_ALLOWED_ORIGINS` env var instead (so a Vercel URL change is a dashboard edit, not a code change), and a `/health` endpoint should be added. The router-mounting and startup-wiring shape below is otherwise unchanged.
+
 ```python
 # backend/main.py — the missing wiring (CORS was not specified anywhere in 14_...md;
 # it WILL cause a silent failure once frontend/backend are on different domains).
@@ -490,6 +492,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://<your-vercel-app>.vercel.app",  # replace after first Vercel deploy, §6 below
+        # SUPERSEDED: read this list from CORS_ALLOWED_ORIGINS env var instead — see 16_...md §5.2
     ],
     allow_methods=["GET", "PUT"],
     allow_headers=["*"],
@@ -502,10 +505,13 @@ def _startup():
 app.include_router(homepage.router)
 app.include_router(explain.router)
 app.include_router(preferences.router)
+# Add GET /health here per 16_...md §4.3 — checks DB connectivity, backs the pre-demo warm-up.
 ```
 
+> **SUPERSEDED — see `16_production_architecture_reassessment.md` §1.3.** The SQLite version below does not persist on a deployed Render instance (ephemeral filesystem). The deployed backend uses `psycopg` against Neon Postgres with the same table names/shapes and the same `get_connection()`/`init_db()` function names — only the driver and placeholder syntax (`?` → `%s`) change. Kept below for local-dev/testing reference only.
+
 ```python
-# backend/db.py
+# backend/db.py — LOCAL/TEST REFERENCE ONLY, not the deployed persistence layer
 import sqlite3
 
 DB_PATH = "app.db"
@@ -540,6 +546,8 @@ def init_db():
 
 ## 5. Exact Environment Files
 
+> **SUPERSEDED — see `16_production_architecture_reassessment.md` §1.3/§5.1.** `DATABASE_URL` below should be a Neon pooled Postgres connection string in the deployed environment, not the SQLite path shown. `CORS_ALLOWED_ORIGINS` is correct as shown and is now actually read by `main.py` (§4.3/§5.2 of `16_...md`), rather than being an unused placeholder.
+
 ```bash
 # backend/.env.example  (copy to backend/.env, never commit the real one)
 ADAPTER_MODE=fixture
@@ -547,7 +555,7 @@ FIXTURE_SCENARIO=normal
 AQI_DATA_GOV_IN_KEY=
 AQI_AQICN_TOKEN=
 OWM_API_KEY=
-DATABASE_URL=sqlite:///./app.db
+DATABASE_URL=postgresql://<user>:<password>@<neon-pooled-host>/<db>?sslmode=require   # Neon pooled connection string — see 16_...md §1.3
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
@@ -566,6 +574,7 @@ astral==3.2
 pytest==8.3.*
 httpx==0.27.*
 python-dotenv==1.0.*
+psycopg[binary,pool]==3.2.*   # added — Neon Postgres driver, see 16_...md §1.3 (replaces stdlib sqlite3)
 ```
 
 ```json
@@ -603,7 +612,7 @@ python-dotenv==1.0.*
 5. **Start command:** `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
 6. Add environment variables in the Render dashboard exactly matching `backend/.env.example` (§5) — do **not** upload the `.env` file itself.
 7. Deploy. Copy the resulting URL (e.g. `https://sih26076-backend.onrender.com`).
-8. Render's free tier disk is ephemeral on redeploy — acceptable for a hackathon demo (SQLite resets are fine), but note it explicitly in the demo-day runbook so no one is confused mid-demo if preferences reset after a redeploy.
+8. **SUPERSEDED — see `16_production_architecture_reassessment.md` §1/§7.** Persistence now lives in Neon Postgres (§1.3 of `16_...md`), not on Render's disk, so this is no longer a concern at all: preferences survive redeploys, restarts, and free-tier spin-downs.
 9. Render free tier cold-starts after inactivity — **curl the deployed URL a few times 10–15 minutes before going on stage** to warm it up; this is a rehearsed step, not optional (same principle as `08_...md` §5's pre-cached demo location).
 
 ### 6.2 Frontend → Vercel

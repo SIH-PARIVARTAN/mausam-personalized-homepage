@@ -45,9 +45,14 @@ Rationale: `/engine` having zero dependencies on `/adapters`, `/backend`, or `/f
 - `/backend` and `/frontend` can be developed against a stub engine/adapter layer (fixed sample `ContextFrame`/`RankedCards` payloads matching `07_...md` schemas) before the real engine is finished — this is how engine and UI work happen in parallel without blocking each other.
 
 ## 5. Deployment / Demo Setup
-- MVP does not need production infrastructure — a single deployed instance (any simple host: Render/Railway/a laptop on the venue network) is sufficient; this is a hackathon demo, not a production launch.
+
+> **UPDATED — see `16_production_architecture_reassessment.md` for the authoritative stack.** The concrete decision is: **Vercel** (frontend) → **Render** (backend) → **Neon** (serverless Postgres, persistent preferences/cache). The "any simple host" guidance below remains correct in spirit; this note adds the specific choice and its implications.
+
+- The deployed stack is **Vercel + Render (free tier) + Neon (free tier)** — zero cost for a hackathon demo and zero-config deploys from a git push.
+- Preferences and signal-cache data **persist across Render restarts and redeploys** (stored in Neon, not on Render's ephemeral disk) — no mid-demo data resets.
 - Demo location(s) should be decided in advance and their live AQI/UV values fetched and cached the night before, so demo-day is not dependent on live network conditions at the venue (`08_...md` §5 contingency, operationalized here).
-- Keep a **local-only fallback build** (all adapters forced to cached/simulated mode, no network calls at all) as the literal last-resort demo path if venue connectivity fails entirely — this should be tested at least once before demo day, not assumed to work.
+- Keep a **local-only fallback build** (all adapters forced to cached/simulated mode, no network calls at all) as the literal last-resort demo path if venue connectivity fails entirely — test this once, don't assume it works.
+- **Pre-demo warm-up:** hit `GET /health` on the deployed Render URL 10–15 min before going on stage to wake the free-tier instance from cold-start (see `16_production_architecture_reassessment.md` §4.3).
 
 ## 6. Recommended Build Order (maps to parallelizable work, not individual assignment)
 1. `engine` core (scoring, priority, conflict resolution) + its unit tests — no dependencies, start immediately.
