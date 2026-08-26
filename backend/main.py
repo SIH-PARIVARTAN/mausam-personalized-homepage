@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from backend.db import init_db, init_pool, close_pool, get_connection
 from backend.settings import settings
-from backend.routers import preferences
+from backend.routers import preferences, homepage, explain
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +31,8 @@ app.add_middleware(
 )
 
 app.include_router(preferences.router)
+app.include_router(homepage.router)
+app.include_router(explain.router)
 
 @app.get("/health")
 def health():

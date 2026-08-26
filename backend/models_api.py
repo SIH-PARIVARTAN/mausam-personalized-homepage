@@ -12,7 +12,12 @@ class SignalRef(BaseModel):
     value: int | float | str | None
     source: str
 
-class RankedCardResponse(BaseModel):
+class WarningResponse(BaseModel):
+    severity: str
+    type: str
+    text: str
+
+class CardResponse(BaseModel):
     card_id: str
     title: str
     priority: str
@@ -25,6 +30,17 @@ class RankedCardResponse(BaseModel):
 class HomepageResponse(BaseModel):
     context_snapshot_id: str
     generated_at: str
-    cards: list[RankedCardResponse]
-    warnings_override: list[dict] = []
+    cards: list[CardResponse]
+    warnings_override: list[WarningResponse] = []
     system_notice: str | None = None
+
+class ScoreComponentsRef(BaseModel):
+    persona_weight: float
+    urgency_multiplier: float
+    confidence_factor: float
+
+class ExplainResponse(BaseModel):
+    explanation_ref: str
+    text: str
+    signal_refs: list[SignalRef]
+    score_components: ScoreComponentsRef
