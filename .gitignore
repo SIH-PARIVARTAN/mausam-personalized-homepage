@@ -25,3 +25,9 @@ coverage/
 *_debug.txt
 *_results.txt
 tmp_*.txt
+.neon
+
+.agents/
+.claude/
+temp_external_repo/
+skills-lock.json
