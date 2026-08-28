@@ -263,6 +263,13 @@ def urgency_multiplier(card_id: str, cf: ContextFrame) -> float:
 # score — the composite scoring function
 # ---------------------------------------------------------------------------
 
+def _resolve_persona_weight(card_id: str, persona: str) -> float:
+    # If explicitly defined for the requested persona, use it.
+    if (card_id, persona) in PERSONA_WEIGHT:
+        return PERSONA_WEIGHT[(card_id, persona)]
+    # Fallback to the default general weights properly instead of a flat 0.2.
+    return PERSONA_WEIGHT.get((card_id, "default_general"), 0.2)
+
 def score(
     card_id: str,
     persona: str,
@@ -282,7 +289,7 @@ def score(
 
     Spec: 03_...md §4, 14_...md §3, 15_...md §1.
     """
-    pw   = PERSONA_WEIGHT.get((card_id, persona), 0.2)
+    pw   = _resolve_persona_weight(card_id, persona)
     um   = urgency_multiplier(card_id, cf)
     cfac = confidence_factor(primary_signal)
     raw  = pw * um * cfac

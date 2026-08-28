@@ -34,7 +34,7 @@ def get_preferences(device_id: str) -> dict:
 
 @router.get("/homepage", response_model=HomepageResponse)
 async def homepage(
-    device_id: str = Query(...),
+    device_id: str = Query(..., pattern=r"^[a-zA-Z0-9_-]{28}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"),
     lat: float = Query(..., ge=-90, le=90),
     lon: float = Query(..., ge=-180, le=180)
 ):

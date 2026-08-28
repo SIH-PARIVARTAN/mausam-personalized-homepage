@@ -1,10 +1,28 @@
 from pydantic import BaseModel, Field, StringConstraints
 from typing import Annotated
 
+from enum import Enum
+
+class PersonaEnum(str, Enum):
+    health = "health"
+    fitness = "fitness"
+    family = "family"
+    traveler = "traveler"
+    commuter = "commuter"
+    agriculture = "agriculture"
+    beachgoer = "beachgoer"
+    event_planner = "event_planner"
+    default_general = "default_general"
+
+class HealthFlagEnum(str, Enum):
+    respiratory_sensitive = "respiratory_sensitive"
+    heat_sensitive = "heat_sensitive"
+
 class PreferencesBody(BaseModel):
-    device_id: str = Field(..., min_length=1, max_length=128)
-    personas: list[Annotated[str, StringConstraints(max_length=64)]] = Field(default=[], max_length=20)
-    health_flags: list[Annotated[str, StringConstraints(max_length=64)]] = Field(default=[], max_length=20)
+    # Regex accepts UUIDv4 OR legacy 28-char alphanumeric Firebase UID to gracefully support both test and UI contracts.
+    device_id: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9_-]{28}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")]
+    personas: list[PersonaEnum] = Field(default=[], max_length=20)
+    health_flags: list[HealthFlagEnum] = Field(default=[], max_length=20)
     saved_locations: list[dict] = Field(default=[], max_length=20)
 
 class SignalRef(BaseModel):
