@@ -35,7 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Generate or fetch local device_id
     let storedId = localStorage.getItem("mausam_device_id");
-    if (!storedId) {
+    const isValidDeviceId = (id: string | null) =>
+      id ? /^[a-zA-Z0-9_-]{28}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id) : false;
+
+    if (!isValidDeviceId(storedId)) {
       storedId = crypto.randomUUID();
       localStorage.setItem("mausam_device_id", storedId);
     }
@@ -97,11 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("mausam_is_guest", "true");
     setIsGuest(true);
     let storedId = localStorage.getItem("mausam_device_id");
-    if (!storedId) {
+    const isValidDeviceId = (id: string | null) =>
+      id ? /^[a-zA-Z0-9_-]{28}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id) : false;
+
+    if (!isValidDeviceId(storedId)) {
       storedId = crypto.randomUUID();
       localStorage.setItem("mausam_device_id", storedId);
     }
-    setDeviceId(storedId);
+    setDeviceId(storedId!);
   };
 
   return (

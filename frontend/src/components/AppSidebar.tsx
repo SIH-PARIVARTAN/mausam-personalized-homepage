@@ -11,6 +11,7 @@ import {
   IconSettings,
   IconUser,
   IconMenu2,
+  IconMessageChatbot,
 } from "@tabler/icons-react";
 import { RefreshCw, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
@@ -97,6 +98,20 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
           className={cn(
             "h-5 w-5 shrink-0 transition-colors",
             pathname === "/map"
+              ? "text-sky-500"
+              : "text-neutral-700 dark:text-neutral-300"
+          )}
+        />
+      ),
+    },
+    {
+      label: t("nav.chatbot") || "Assistant",
+      href: "/chatbot",
+      icon: (
+        <IconMessageChatbot
+          className={cn(
+            "h-5 w-5 shrink-0 transition-colors",
+            pathname === "/chatbot"
               ? "text-sky-500"
               : "text-neutral-700 dark:text-neutral-300"
           )}

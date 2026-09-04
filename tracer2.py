@@ -1,0 +1,17 @@
+from engine.engine import rank
+from engine.models import ContextFrame, SignalValue
+cf = ContextFrame(
+    personas=["commuter"],
+    health_flags=[],
+    has_declared_profile=True,
+    local_time="2026",
+    is_daylight=True,
+    lat=0.0,
+    lon=0.0,
+    is_commute_window=True,
+    visibility_km=SignalValue(value=1.0, source="live", freshness_min=0, confidence=1.0)
+)
+r = rank(cf)
+d = next(c for c in r.ranked_cards if c.card_id == "visibility_commute")
+with open("comp_out2.txt", "w") as f:
+    f.write(str(d.score_components))
