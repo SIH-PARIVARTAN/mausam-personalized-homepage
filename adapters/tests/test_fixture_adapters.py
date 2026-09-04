@@ -8,13 +8,19 @@ def test_forecast_fixture():
     os.environ["FIXTURE_SCENARIO"] = "normal"
     now = datetime.datetime.now()
     adapter = ForecastAdapter()
-    t, h, w, p = adapter.fetch(18.5, 73.8, now)
-    assert t.source == "simulated"
-    assert h.source == "simulated"
-    assert t.confidence == 0.7
+    res = adapter.fetch(10.0, 10.0, datetime.datetime.now())
+    # Should yield t, h, w, p, v, soil, ext = 7 items
+    assert len(res) == 7
+    assert res[0].confidence == 1.0
+    assert res[1].confidence == 1.0
+    assert res[2].confidence == 1.0
+    assert res[3].confidence == 1.0
+    assert res[4].confidence == 1.0
+    assert res[5].confidence == 1.0
+    assert isinstance(res[6], list)
 
     os.environ["FIXTURE_SCENARIO"] = "invalid_scenario_file"
-    t, h, w, p = adapter.fetch(18.5, 73.8, now)
+    t, h, w, p, _v, _soil, _ext = adapter.fetch(18.5, 73.8, now)
     assert t.source == "unavailable"
 
 def test_warning_fixture():

@@ -32,7 +32,7 @@ def test_homepage_contract_unavailable(monkeypatch):
     def fake_make_unav(*args, **kwargs):
         # By providing exactly the shape returning unavailable signals
         f = ForecastAdapter()
-        return (f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal())
+        return (f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal(), f.make_unavailable_signal(), [])
 
     monkeypatch.setattr(ForecastAdapter, "fetch", fake_make_unav)
     monkeypatch.setattr(AQIAdapter, "fetch", lambda *args, **kwargs: AQIAdapter().make_unavailable_signal())

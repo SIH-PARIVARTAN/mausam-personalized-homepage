@@ -246,8 +246,8 @@
       },
       "warnings": []
     },
-    "expected_top_card": "general_conditions",
-    "rationale": "Universal fallback card"
+    "expected_top_card": "sunrise_sunset",
+    "rationale": "Universal fallback card (general conditions) suppressed because all data is unavailable, sunrise_sunset is only logical card remaining"
   },
   {
     "id": "p0_flood_health",
@@ -1272,5 +1272,544 @@
     },
     "expected_top_card": "activity_window",
     "rationale": "Moderate boosts window"
+  },
+  {
+    "id": "tr_destination_alert",
+    "type": "persona_traveler",
+    "persona": "traveler",
+    "context": {
+      "personas": [
+        "traveler"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 22,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 3,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "destinations": [
+        {
+          "lat": 10,
+          "lon": 10,
+          "warnings": [
+            {
+              "severity": "red",
+              "type": "flood",
+              "text": "Flood Warning"
+            }
+          ]
+        },
+        {
+          "lat": 20,
+          "lon": 20,
+          "warnings": [
+            {
+              "severity": "yellow",
+              "type": "wind",
+              "text": "High Wind"
+            }
+          ]
+        }
+      ]
+    },
+    "expected_top_card": "destination_alert",
+    "rationale": "Traveler persona with 2+ destination warnings triggers P2 alert prioritized over general conditions"
+  },
+  {
+    "id": "co_low_visibility",
+    "type": "persona_commuter",
+    "persona": "commuter",
+    "context": {
+      "personas": [
+        "commuter"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": true,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 22,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 3,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "visibility_km": {
+        "value": 0.5,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      }
+    },
+    "expected_top_card": "visibility_commute",
+    "rationale": "Commuter persona with <1.5km visibility during commute triggers P1 alert"
+  },
+  {
+    "id": "cs_agriculture_dry",
+    "type": "specialized",
+    "persona": "agriculture",
+    "context": {
+      "personas": [
+        "agriculture"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 22,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 3,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "soil_moisture_pct": {
+        "value": 15,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      }
+    },
+    "expected_top_card": "agriculture_advisory",
+    "rationale": "Dry soil accelerates agriculture urgency"
+  },
+  {
+    "id": "cs_beachgoer_high_waves",
+    "type": "specialized",
+    "persona": "beachgoer",
+    "context": {
+      "personas": [
+        "beachgoer"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 22,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 3,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "wave_height_m": {
+        "value": 2.0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "tide_status": "rising"
+    },
+    "expected_top_card": "marine_conditions_alert",
+    "rationale": "High waves accelerates beachgoer marine warning"
+  },
+  {
+    "id": "cs_event_discomfort",
+    "type": "specialized",
+    "persona": "event_planner",
+    "context": {
+      "personas": [
+        "event_planner"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 35,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 3,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "comfort_index": 32.0
+    },
+    "expected_top_card": "event_outlook",
+    "rationale": "High comfort index discomfort accelerates event planner rating"
+  },
+  {
+    "id": "pd_compound_driving",
+    "type": "compound",
+    "persona": "commuter",
+    "context": {
+      "personas": [
+        "commuter"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T08:00:00Z",
+      "is_commute_window": true,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 15,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": {
+          "aqi": 50,
+          "dominant": "pm25"
+        },
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 85,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 2,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "visibility_km": {
+        "value": 0.5,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": []
+    },
+    "expected_top_card": "compound_driving_hazard",
+    "rationale": "High rain (85%) and low visibility (0.5km) triggers driving hazard for commuter."
+  },
+  {
+    "id": "pd_compound_heat_aqi",
+    "type": "compound",
+    "persona": "health",
+    "context": {
+      "personas": [
+        "health"
+      ],
+      "health_flags": [
+        "heat_sensitive"
+      ],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T14:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": {
+          "aqi": 180,
+          "dominant": "pm25"
+        },
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 8,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": []
+    },
+    "expected_top_card": "compound_heat_aqi_danger",
+    "rationale": "Temp (40) and AQI (180) triggers compound danger for health persona."
+  },
+  {
+    "id": "pd_compound_p0_override",
+    "type": "safety_override",
+    "persona": "health",
+    "context": {
+      "personas": [
+        "health"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T14:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 40,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": {
+          "aqi": 180,
+          "dominant": "pm25"
+        },
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 8,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [
+        {
+          "severity": "red",
+          "type": "heatwave",
+          "text": "RED Alert for Severe Heatwave"
+        }
+      ]
+    },
+    "expected_top_card": "severe_warning",
+    "rationale": "P0 severe_warning MUST override compound_heat_aqi_danger despite both triggering natively."
+  },
+  {
+    "id": "pd_traveler_delta",
+    "type": "normal",
+    "persona": "traveler",
+    "context": {
+      "personas": [
+        "traveler"
+      ],
+      "health_flags": [],
+      "has_declared_profile": true,
+      "local_time": "2026-08-28T14:00:00Z",
+      "is_commute_window": false,
+      "is_daylight": true,
+      "lat": 28.6,
+      "lon": 77.2,
+      "temp_c": {
+        "value": 35,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "aqi": {
+        "value": {
+          "aqi": 50,
+          "dominant": "pm25"
+        },
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "precip_prob_pct": {
+        "value": 0,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "uv": {
+        "value": 5,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "wind_kmh": {
+        "value": 10,
+        "source": "fixture",
+        "confidence": 1.0,
+        "freshness_min": 0
+      },
+      "warnings": [],
+      "destinations": [
+        {
+          "lat": 10.0,
+          "lon": 10.0,
+          "warnings": [
+            {
+              "severity": "orange",
+              "type": "storm",
+              "text": "Storm"
+            }
+          ],
+          "temp_c": {
+            "value": 20,
+            "source": "fixture",
+            "confidence": 1.0,
+            "freshness_min": 0
+          }
+        }
+      ]
+    },
+    "expected_top_card": "destination_alert",
+    "rationale": "Traveler destination alert resolves over baseline correctly."
   }
 ]

@@ -62,12 +62,50 @@ def classify_priority(
 # a documented hard threshold AND it is alertable (per CARD_DEFINITIONS).
 # Thresholds match the urgency_multiplier bands in scoring.py.
 # Source: 03_...md §6.
+#
+# PATCH (2026-09-05, GAP-01 resolution):
+#   Original table covered only 4 of 11 alertable cards. The following 6 entries
+#   were added to ensure every alertable card can reach is_alert=True at an
+#   appropriate, code-justified threshold. Thresholds are set at or below the
+#   worst-case urgency_multiplier value returned by scoring.py for that card.
+#   No urgency bands, persona weights, or scoring formulas were altered.
 
 _HARD_ALERT_URGENCY: dict[str, float] = {
-    "aqi_health":       1.8,    # AQI ≥ 150 (Poor band)
-    "uv_sun_exposure":  1.8,    # UV ≥ 8 (Very High band)
-    "activity_window":  1.8,    # Composite bad conditions band
-    "rain_commute":     2.0,    # Commute window + ≥60% precip
+    # --- Original 4 entries (03_...md §6) -----------------------------------
+    "aqi_health":               1.8,    # AQI ≥ 150 (Poor band)
+    "uv_sun_exposure":          1.8,    # UV ≥ 8 (Very High band)
+    "activity_window":          1.8,    # Composite bad conditions band
+    "rain_commute":             2.0,    # Commute window + ≥60% precip
+
+    # --- GAP-01 additions (2026-09-05) --------------------------------------
+    # compound_heat_aqi_danger / compound_driving_hazard:
+    #   scoring.py returns a flat 3.0 whenever the compound condition is true
+    #   (Temp ≥ 38°C + AQI ≥ 150, or Precip ≥ 60% + Vis ≤ 1km).
+    #   Threshold 2.5 is safely below 3.0, ensuring the compound card always
+    #   alerts when its trigger condition is live.
+    "compound_heat_aqi_danger": 2.5,
+    "compound_driving_hazard":  2.5,
+
+    # visibility_commute:
+    #   scoring.py worst band = 2.5 (commute window + vis ≤ 1.5km).
+    #   Threshold 2.0 means the card alerts only during the commute-window
+    #   worst band (2.5 ≥ 2.0), not the off-peak worst band (1.6 < 2.0).
+    "visibility_commute":       2.0,
+
+    # destination_alert:
+    #   scoring.py max urgency = 1.8 (≥ 2 destination active warnings).
+    #   Threshold 1.8 means multi-warning destination scenarios alert.
+    "destination_alert":        1.8,
+
+    # agriculture_advisory:
+    #   scoring.py frost_warning_active alone returns 2.0.
+    #   Threshold 1.8 ensures the frost-warning path alerts.
+    "agriculture_advisory":     1.8,
+
+    # marine_conditions_alert:
+    #   scoring.py wave_height_m > 1.5m returns 2.0.
+    #   Threshold 1.8 ensures significant wave height scenarios alert.
+    "marine_conditions_alert":  1.8,
 }
 
 

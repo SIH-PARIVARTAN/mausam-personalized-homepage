@@ -2,5 +2,27 @@
     "temp_c": 28.5,
     "humidity_pct": 55,
     "wind_kmh": 12.0,
-    "precip_prob_pct": 10
+    "precip_prob_pct": 10,
+    "visibility_km": 10.0,
+    "soil_moisture_pct": 45.5,
+    "extended_forecast": [
+        {
+            "date": "2026-08-30",
+            "temp_min_c": 18.0,
+            "temp_max_c": 29.0,
+            "precip_prob_pct": 0,
+            "condition": "sunny",
+            "source": "fixture",
+            "confidence": 1.0
+        },
+        {
+            "date": "2026-08-31",
+            "temp_min_c": 19.5,
+            "temp_max_c": 31.0,
+            "precip_prob_pct": 20,
+            "condition": "partly_cloudy",
+            "source": "fixture",
+            "confidence": 1.0
+        }
+    ]
 }

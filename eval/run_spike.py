@@ -38,6 +38,21 @@ def run_evaluation():
             data['precip_prob_pct'] = SignalValue(**data['precip_prob_pct'])
             data['uv'] = SignalValue(**data['uv'])
             data['wind_kmh'] = SignalValue(**data['wind_kmh'])
+            if 'visibility_km' in data:
+                data['visibility_km'] = SignalValue(**data['visibility_km'])
+            if 'soil_moisture_pct' in data:
+                data['soil_moisture_pct'] = SignalValue(**data['soil_moisture_pct'])
+            if 'wave_height_m' in data:
+                data['wave_height_m'] = SignalValue(**data['wave_height_m'])
+            if 'water_temp_c' in data:
+                data['water_temp_c'] = SignalValue(**data['water_temp_c'])
+            if 'destinations' in data:
+                from engine.models import DestinationContext
+                for d in data['destinations']:
+                    if 'temp_c' in d and isinstance(d['temp_c'], dict):
+                        d['temp_c'] = SignalValue(**d['temp_c'])
+                data['destinations'] = [DestinationContext(**d) for d in data['destinations']]
+                
             cf = ContextFrame(**data)
 
             # True Engine Rank

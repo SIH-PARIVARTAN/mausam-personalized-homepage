@@ -28,6 +28,18 @@ CARD_DEFINITIONS: dict[str, dict] = {
         "required_signals": ["warnings"],   # non-empty list
         "description": "Severe weather warning — active override alert.",
     },
+    "compound_heat_aqi_danger": {
+        "personas": ["health", "fitness"],
+        "alertable": True,
+        "required_signals": [],  # Dynamic bounds verified natively by compound.py
+        "description": "Composite physiological danger from extreme heat and dangerous AQI.",
+    },
+    "compound_driving_hazard": {
+        "personas": ["commuter", "family"],
+        "alertable": True,
+        "required_signals": [],  # Dynamic bounds verified natively by compound.py
+        "description": "Composite transit hazard heavily escalated by rain and low visibility.",
+    },
     "aqi_health": {
         "personas": ["health", "fitness"],
         "alertable": True,
@@ -47,10 +59,40 @@ CARD_DEFINITIONS: dict[str, dict] = {
         "description": "Best outdoor activity window based on current conditions.",
     },
     "rain_commute": {
-        "personas": ["family", "fitness"],
+        "personas": ["family", "fitness", "commuter"],
         "alertable": True,
         "required_signals": ["precip_prob_pct"],
         "description": "Precipitation forecast and commute impact.",
+    },
+    "visibility_commute": {
+        "personas": ["commuter"],
+        "alertable": True,
+        "required_signals": ["visibility_km"],
+        "description": "Poor visibility alerts during commute windows.",
+    },
+    "destination_alert": {
+        "personas": ["traveler"],
+        "alertable": True,
+        "required_signals": [], # Checked dynamically via _card_applies looking at destinations array natively
+        "description": "Weather and safety insights for saved travel destinations.",
+    },
+    "agriculture_advisory": {
+        "personas": ["agriculture"],
+        "alertable": True,
+        "required_signals": [], # Handled dynamically to combine frost + soil
+        "description": "Farming and gardening guidance (soil moisture, frost).",
+    },
+    "marine_conditions_alert": {
+        "personas": ["beachgoer"],
+        "alertable": True,
+        "required_signals": ["wave_height_m"], # Minimum required to consider marine viable
+        "description": "Coastal safety indices and wave alerts.",
+    },
+    "event_outlook": {
+        "personas": ["event_planner"],
+        "alertable": False,
+        "required_signals": [], # Evaluates comfort index or extended forecast
+        "description": "Extended event horizons and comfort logic.",
     },
     "sunrise_sunset": {
         "personas": ["fitness", "default_general"],
@@ -82,10 +124,17 @@ CARD_DEFINITIONS: dict[str, dict] = {
 # Earlier in this list = wins the tie.
 CARD_DEFINITION_ORDER: list[str] = [
     "severe_warning",
+    "compound_heat_aqi_danger",
+    "compound_driving_hazard",
+    "destination_alert",
+    "visibility_commute",
+    "marine_conditions_alert",
+    "agriculture_advisory",
     "aqi_health",
     "rain_commute",
     "uv_sun_exposure",
     "activity_window",
+    "event_outlook",
     "sunrise_sunset",
     "general_conditions",
     "pollen_illustrative",

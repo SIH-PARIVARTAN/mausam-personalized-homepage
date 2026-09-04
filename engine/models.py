@@ -57,6 +57,34 @@ class SignalValue:
     as a badge.  06_...md §4 "confidence illustrative values" table.
     """
 
+MAX_DESTINATIONS_FETCHED = 3
+
+@dataclass
+class DestinationContext:
+    """
+    Context for a saved travel destination.
+    Provides a scalable foundation for destination-aware (not route-aware) components.
+    """
+    lat: float
+    lon: float
+    warnings: list[dict] = field(default_factory=list)
+    temp_c: SignalValue = field(
+        default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
+    )
+
+@dataclass
+class DailyForecastSummary:
+    """
+    Lightweight forecast summary for extended horizons (e.g. event planning).
+    Structurally isolated to prevent recursive/nested ContextFrame bloat.
+    """
+    date: str
+    temp_min_c: float | None
+    temp_max_c: float | None
+    precip_prob_pct: float | None
+    condition: str | None
+    source: Source = "unavailable"
+    confidence: float = 0.0
 
 # ---------------------------------------------------------------------------
 # Context frame — the single input to rank()
@@ -132,6 +160,27 @@ class ContextFrame:
     uv: SignalValue = field(
         default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
     )
+    visibility_km: SignalValue = field(
+        default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
+    )
+
+    # ---- Phase C: Specialized Personas Fields ---------------------------
+    soil_moisture_pct: SignalValue = field(
+        default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
+    )
+    frost_warning_active: bool = False
+    planting_season_guidance: str = "unavailable"
+
+    wave_height_m: SignalValue = field(
+        default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
+    )
+    water_temp_c: SignalValue = field(
+        default_factory=lambda: SignalValue(None, "unavailable", None, 0.0)
+    )
+    tide_status: str = "unavailable"
+
+    comfort_index: float | None = None
+    extended_forecast: list[DailyForecastSummary] = field(default_factory=list)
     pollen: SignalValue | None = None
     """
     None when pollen feature is entirely disabled.
@@ -139,7 +188,7 @@ class ContextFrame:
     """
     sunrise: str = "06:00"    # HH:MM local time, locally computed (always "live")
     sunset: str = "18:30"     # HH:MM local time, locally computed (always "live")
-
+    destinations: list[DestinationContext] = field(default_factory=list)
 
 # ---------------------------------------------------------------------------
 # Engine output

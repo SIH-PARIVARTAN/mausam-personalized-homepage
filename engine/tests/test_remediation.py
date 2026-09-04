@@ -266,7 +266,8 @@ class TestF02AlertPriorityFloor:
         assert aqi_card is not None, "aqi_health card must be present"
 
         # Raw score verification — score itself must be the stale-penalised value
-        expected_raw = 0.9 * 1.8 * 0.3  # = 0.486
+        # Now uses 1.0 instead of 0.9 because Phase A respiratory_sensitive bumps weight explicitly.
+        expected_raw = 1.0 * 1.8 * 0.3  # = 0.54
         assert aqi_card.score == pytest.approx(expected_raw, rel=1e-3), (
             f"Raw score must be the unadjusted formula value {expected_raw:.4f}. "
             f"Got {aqi_card.score}. The floor must NOT mutate the score."

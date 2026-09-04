@@ -16,9 +16,16 @@ Source of truth:
 from __future__ import annotations
 
 from .cards import CARD_DEFINITIONS, CARD_DEFINITION_ORDER
+from .compound import is_compound_driving_hazard, is_compound_heat_aqi_danger
 from .conflict import resolve_ties
 from .explain import build_explanation
-from .models import ContextFrame, EngineOutput, RankedCard, SignalValue, validate_context_frame
+from .models import (
+    ContextFrame,
+    EngineOutput,
+    RankedCard,
+    SignalValue,
+    validate_context_frame,
+)
 from .priority import apply_alert_priority_floor, classify_priority, is_alert
 from .scoring import PERSONA_WEIGHT, score
 
@@ -80,6 +87,28 @@ def _card_applies(card_id: str, cf: ContextFrame) -> bool:
             for s in [cf.temp_c, cf.wind_kmh, cf.aqi, cf.uv]
         )
 
+    if card_id == "visibility_commute":
+        return cf.visibility_km.source != "unavailable"
+
+    if card_id == "destination_alert":
+        return len(cf.destinations) > 0 and any(len(d.warnings) > 0 for d in cf.destinations)
+
+    # Phase D Compounds:
+    if card_id == "compound_heat_aqi_danger":
+        return is_compound_heat_aqi_danger(cf)
+    if card_id == "compound_driving_hazard":
+        return is_compound_driving_hazard(cf)
+
+    # Phase C Cards:
+    if card_id == "agriculture_advisory":
+        return cf.soil_moisture_pct.source != "unavailable" or getattr(cf, "frost_warning_active", False)
+
+    if card_id == "marine_conditions_alert":
+        return cf.wave_height_m.source != "unavailable"
+
+    if card_id == "event_outlook":
+        return getattr(cf, "extended_forecast", []) != [] or getattr(cf, "comfort_index", None) is not None
+
     return True   # Unknown card: allow (defensive default).
 
 
@@ -140,6 +169,38 @@ def _primary_signal_for(card_id: str, cf: ContextFrame) -> SignalValue:
             # Weakest confidence in the group drives the card's overall confidence.
             return min(valid, key=lambda s: s.confidence)
         return group[0]   # All unavailable — return temp_c (engine will skip anyway)
+
+    if card_id == "visibility_commute":
+        return cf.visibility_km
+
+    if card_id == "compound_heat_aqi_danger":
+        return min((cf.temp_c, cf.aqi), key=lambda s: s.confidence)
+
+    if card_id == "compound_driving_hazard":
+        return min((cf.precip_prob_pct, cf.visibility_km), key=lambda s: s.confidence)
+
+    if card_id == "destination_alert":
+        return SignalValue(
+            value=cf.destinations,
+            source="simulated",
+            freshness_min=0,
+            confidence=1.0,
+        )
+
+    if card_id == "agriculture_advisory":
+        return cf.soil_moisture_pct
+
+    if card_id == "marine_conditions_alert":
+        return cf.wave_height_m
+        
+    if card_id == "event_outlook":
+        if getattr(cf, "extended_forecast", []):
+            ext = cf.extended_forecast[0]
+            return SignalValue(value=None, source=ext.source, confidence=ext.confidence, freshness_min=0)
+        valid = [s for s in (cf.temp_c, cf.humidity_pct) if s.source != "unavailable"]
+        if valid:
+            return min(valid, key=lambda s: s.confidence)
+        return SignalValue(value=None, source="unavailable", confidence=0.0, freshness_min=0)
 
     # Fallback to temperature as a safe default.
     return cf.temp_c
@@ -209,6 +270,39 @@ def _signal_refs_for(card_id: str, cf: ContextFrame) -> list[dict]:
             {"signal": "warning", "value": w, "source": "simulated"}
             for w in cf.warnings
         ]
+
+    if card_id == "visibility_commute":
+        return [_ref("visibility_km", cf.visibility_km)]
+
+    if card_id == "compound_heat_aqi_danger":
+        return [
+            _ref("temp_c", cf.temp_c),
+            _ref("aqi", cf.aqi, _aqi_val)
+        ]
+
+    if card_id == "compound_driving_hazard":
+        return [
+            _ref("precip_prob_pct", cf.precip_prob_pct),
+            _ref("visibility_km", cf.visibility_km)
+        ]
+
+    if card_id == "destination_alert":
+        return [
+            {"signal": "warnings", "value": d.warnings, "source": "simulated"}
+            for d in cf.destinations if getattr(d, "warnings", False)
+        ]
+
+    if card_id == "agriculture_advisory":
+        return [_ref("soil_moisture_pct", cf.soil_moisture_pct)]
+
+    if card_id == "marine_conditions_alert":
+        return [
+            _ref("wave_height_m", cf.wave_height_m),
+            {"signal": "tide_status", "value": cf.tide_status, "source": cf.wave_height_m.source}
+        ]
+
+    if card_id == "event_outlook":
+        return [{"signal": "comfort_index", "value": getattr(cf, "comfort_index", None), "source": "computed"}]
 
     return []
 
@@ -333,6 +427,18 @@ def rank(cf: ContextFrame) -> EngineOutput:
     # --- Separate P0 from ranked list ----------------------------------------
     override_warnings = [c for c in sorted_cards if c.priority == "P0"]
     ranked_cards       = [c for c in sorted_cards if c.priority != "P0"]
+
+    # --- Targeted Redundancy Suppression (Phase D) ---------------------------
+    # Executes after P0 splitting ensures severe_warnings are NEVER suppressed.
+    suppress = set()
+    active_ids = {c.card_id for c in ranked_cards}
+    
+    if "compound_heat_aqi_danger" in active_ids:
+        suppress.update(["aqi_health", "general_conditions"])
+    if "compound_driving_hazard" in active_ids:
+        suppress.update(["visibility_commute", "rain_commute"])
+        
+    ranked_cards = [c for c in ranked_cards if c.card_id not in suppress]
 
     return EngineOutput(
         ranked_cards=ranked_cards,

@@ -70,6 +70,7 @@ PERSONA_WEIGHT: dict[tuple[str, str], float] = {
     ("rain_commute", "health"):          0.3,
     ("rain_commute", "fitness"):         0.6,
     ("rain_commute", "family"):          0.95,
+    ("rain_commute", "commuter"):        0.95,
     ("rain_commute", "default_general"): 0.4,
 
     # --- sunrise_sunset ---------------------------------------------------
@@ -94,6 +95,34 @@ PERSONA_WEIGHT: dict[tuple[str, str], float] = {
     ("pollen_illustrative", "fitness"):         0.0,
     ("pollen_illustrative", "family"):          0.0,
     ("pollen_illustrative", "default_general"): 0.0,
+
+    # --- visibility_commute -----------------------------------------------
+    ("visibility_commute", "commuter"):        0.95,
+    ("visibility_commute", "default_general"): 0.3,
+
+    # --- Phase D Compound Personas ----------------------------------------
+    ("compound_heat_aqi_danger", "health"):    1.0,
+    ("compound_heat_aqi_danger", "fitness"):   1.0,
+    ("compound_heat_aqi_danger", "default_general"): 0.8,
+
+    ("compound_driving_hazard", "commuter"):   1.0,
+    ("compound_driving_hazard", "family"):     1.0,
+    ("compound_driving_hazard", "default_general"): 0.8,
+
+    # --- destination_alert ------------------------------------------------
+    # Strictly limits destination relevance only to Travelers to avoid overwhelming generic users
+    ("destination_alert", "traveler"):         0.95,
+    ("destination_alert", "default_general"):  0.0,
+
+    # --- Phase C Specialized Personas -------------------------------------
+    ("agriculture_advisory", "agriculture"):   0.95,
+    ("agriculture_advisory", "default_general"): 0.0,
+    
+    ("marine_conditions_alert", "beachgoer"):  0.95,
+    ("marine_conditions_alert", "default_general"): 0.0,
+    
+    ("event_outlook", "event_planner"):        0.95,
+    ("event_outlook", "default_general"):      0.0,
 }
 
 # --- Cold-start ordering sanity check -------------------------------------
@@ -118,6 +147,7 @@ CONFIDENCE_BY_SOURCE: dict[str, float] = {
     "simulated":   0.7,
     "stale":       0.3,
     "unavailable": 0.0,
+    "fixture":     1.0,
 }
 
 
@@ -241,6 +271,54 @@ def urgency_multiplier(card_id: str, cf: ContextFrame) -> float:
             return 1.3   # High precip even outside commute hours
         return 1.0
 
+    if card_id == "visibility_commute":
+        v = cf.visibility_km.value
+        if v is None:
+            return 1.0
+        v = float(v)
+        if cf.is_commute_window and v <= 1.5:
+            return 2.5   # P1 boundary (0.95 * 2.5 * 0.7 = 1.66)
+        if v <= 1.5:
+            return 1.6   # High urgency anytime
+        if cf.is_commute_window and v <= 5.0:
+            return 1.4   # Moderate urgency
+        return 1.0
+
+    elif card_id == "destination_alert":
+        if not cf.destinations:
+            return 1.0
+        warn_cnt = sum(len(d.warnings) for d in cf.destinations if d.warnings)
+        if warn_cnt >= 2:
+            return 1.8   # P1 boundary (0.95 * 1.8 * 1.0 = 1.71)
+        if warn_cnt == 1:
+            return 1.4   # P2 boundary
+        return 1.0
+
+    elif card_id == "agriculture_advisory":
+        u = 1.0
+        if getattr(cf, "frost_warning_active", False):
+            u *= 2.0
+        soil = getattr(cf, "soil_moisture_pct", None)
+        if soil and soil.value is not None:
+            if float(soil.value) < 30.0:  # Arbitrary threshold for dry soil
+                u *= 1.5
+        return u
+
+    elif card_id == "marine_conditions_alert":
+        u = 1.0
+        wave = getattr(cf, "wave_height_m", None)
+        if wave and wave.value is not None:
+            if float(wave.value) > 1.5:
+                u *= 2.0
+        return u
+        
+    elif card_id == "event_outlook":
+        u = 1.0
+        comfort = getattr(cf, "comfort_index", None)
+        if comfort is not None and comfort > 27.0: # Warm discomfort
+            u *= 1.2
+        return u
+
     if card_id == "sunrise_sunset":
         # Informational only in the MVP; urgency never changes independently.
         return 1.0
@@ -255,6 +333,12 @@ def urgency_multiplier(card_id: str, cf: ContextFrame) -> float:
         # Simulated/illustrative only (13_...md); never independently alerted.
         return 1.0
 
+    if card_id == "compound_heat_aqi_danger":
+        return 3.0
+        
+    if card_id == "compound_driving_hazard":
+        return 3.0
+
     # Fallback for any unknown card_id (should never occur in prod).
     return 1.0
 
@@ -263,12 +347,27 @@ def urgency_multiplier(card_id: str, cf: ContextFrame) -> float:
 # score — the composite scoring function
 # ---------------------------------------------------------------------------
 
-def _resolve_persona_weight(card_id: str, persona: str) -> float:
+def _resolve_persona_weight(card_id: str, persona: str, health_flags: list[str]) -> tuple[float, bool]:
     # If explicitly defined for the requested persona, use it.
     if (card_id, persona) in PERSONA_WEIGHT:
-        return PERSONA_WEIGHT[(card_id, persona)]
-    # Fallback to the default general weights properly instead of a flat 0.2.
-    return PERSONA_WEIGHT.get((card_id, "default_general"), 0.2)
+        base_pw = PERSONA_WEIGHT[(card_id, persona)]
+    else:
+        # Fallback to the default general weights properly instead of a flat 0.2.
+        base_pw = PERSONA_WEIGHT.get((card_id, "default_general"), 0.2)
+        
+    modifier = 0.0
+    flags_applied = False
+    
+    # Phase A: Map health flags directly to persona weight bumps.
+    if card_id == "aqi_health" and "respiratory_sensitive" in health_flags:
+        modifier = 0.1
+        flags_applied = True
+    elif card_id == "uv_sun_exposure" and "heat_sensitive" in health_flags:
+        modifier = 0.1
+        flags_applied = True
+        
+    final_pw = min(1.0, base_pw + modifier)
+    return final_pw, flags_applied
 
 def score(
     card_id: str,
@@ -289,7 +388,7 @@ def score(
 
     Spec: 03_...md §4, 14_...md §3, 15_...md §1.
     """
-    pw   = _resolve_persona_weight(card_id, persona)
+    pw, flags_applied = _resolve_persona_weight(card_id, persona, cf.health_flags)
     um   = urgency_multiplier(card_id, cf)
     cfac = confidence_factor(primary_signal)
     raw  = pw * um * cfac
@@ -297,4 +396,5 @@ def score(
         "persona_weight":       pw,
         "urgency_multiplier":   um,
         "confidence_factor":    cfac,
+        "health_flags_applied": flags_applied,
     }

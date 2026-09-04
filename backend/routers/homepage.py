@@ -9,6 +9,10 @@ from backend.deps import build_context_frame
 from engine.engine import rank
 from backend.models_api import HomepageResponse, CardResponse, WarningResponse
 import json
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -19,17 +23,19 @@ def get_preferences(device_id: str) -> dict:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT personas, health_flags FROM preferences WHERE device_id = %s
+                SELECT personas, health_flags, saved_locations FROM preferences WHERE device_id = %s
             """, (device_id,))
             row = cur.fetchone()
             if row:
                 return {
                     "personas": json.loads(row[0]),
-                    "health_flags": json.loads(row[1])
+                    "health_flags": json.loads(row[1]),
+                    "saved_locations": json.loads(row[2] or "[]")
                 }
             return {
                 "personas": ["default_general"],
-                "health_flags": []
+                "health_flags": [],
+                "saved_locations": []
             }
 
 @router.get("/homepage", response_model=HomepageResponse)
@@ -41,6 +47,7 @@ async def homepage(
     if not device_id.strip():
         raise HTTPException(status_code=422, detail="device_id required")
 
+    start_time = time.time()
     prefs = get_preferences(device_id)
     now_ist = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
 
@@ -55,14 +62,23 @@ async def homepage(
 
     # Format cards
     display_titles = {
-        "severe_warning": "Severe Weather Warning",
-        "aqi_health": "Air Quality",
-        "uv_sun_exposure": "UV Index",
-        "activity_window": "Activity Window",
-        "rain_commute": "Rain & Commute",
-        "sunrise_sunset": "Daylight Hours",
-        "general_conditions": "General Conditions",
-        "pollen_illustrative": "Pollen Levels"
+        # Original 8 entries
+        "severe_warning":           "Severe Weather Warning",
+        "aqi_health":               "Air Quality",
+        "uv_sun_exposure":          "UV Index",
+        "activity_window":          "Activity Window",
+        "rain_commute":             "Rain & Commute",
+        "sunrise_sunset":           "Daylight Hours",
+        "general_conditions":       "General Conditions",
+        "pollen_illustrative":      "Pollen Levels",
+        # GAP-01 / display patch (2026-09-05): 7 missing persona-specific cards
+        "compound_heat_aqi_danger": "Extreme Heat & Air Quality Danger",
+        "compound_driving_hazard":  "Driving Hazard Alert",
+        "visibility_commute":       "Low Visibility Commute",
+        "destination_alert":        "Destination Weather Alert",
+        "agriculture_advisory":     "Agriculture Advisory",
+        "marine_conditions_alert":  "Marine Conditions Alert",
+        "event_outlook":            "Event Weather Outlook",
     }
 
     cards = []
@@ -121,6 +137,12 @@ async def homepage(
                         break
 
     system_notice = "All data sources unavailable. Displaying degraded view." if all_unavailable else None
+
+    elapsed = time.time() - start_time
+    if all_unavailable:
+        logger.warning(f"Resolved /homepage in {elapsed*1000:.0f}ms WITH DEGRADATION (all sources unavailable)")
+    else:
+        logger.info(f"Resolved /homepage in {elapsed*1000:.0f}ms (is_alert={any(c.is_alert for c in cards)})")
 
     return HomepageResponse(
         context_snapshot_id=context_snapshot_id,

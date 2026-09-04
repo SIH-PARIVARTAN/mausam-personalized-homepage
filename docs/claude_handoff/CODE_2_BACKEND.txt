@@ -1,0 +1,467 @@
+﻿============================================================
+FILE: backend/main.py
+============================================================
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+
+from backend.db import init_db, init_pool, close_pool, get_connection
+from backend.settings import settings
+from backend.routers import preferences, homepage, explain
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_pool()
+    try:
+        init_db()
+    except Exception as e:
+        # DB connection could fail on local tests if no DB is available
+        print(f"Warning: Failed to init db: {e}")
+    yield
+    # Shutdown
+    close_pool()
+
+app = FastAPI(title="Mausam Personalized Homepage API", lifespan=lifespan)
+
+origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["GET", "PUT"],
+    allow_headers=["*"],
+)
+
+app.include_router(preferences.router)
+app.include_router(homepage.router)
+app.include_router(explain.router)
+
+@app.get("/health")
+def health():
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+        return {"status": "ok", "db": "connected"}
+    except Exception:
+        # We catch exceptions to prevent crash, instead returning degraded status.
+        # Do not expose exception str() to UI to protect potential secrets in DSN traces.
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=503, content={"status": "degraded", "db": "unavailable"})
+
+
+
+============================================================
+FILE: backend/deps.py
+============================================================
+import datetime
+from fastapi import HTTPException
+from engine.models import ContextFrame, SignalValue
+from adapters.forecast_adapter import ForecastAdapter
+from adapters.warning_adapter import WarningAdapter
+from adapters.sun_adapter import SunAdapter
+from adapters.aqi_adapter import AQIAdapter
+from adapters.uv_adapter import UVAdapter
+
+def build_context_frame(prefs: dict, lat: float, lon: float, when: datetime.datetime) -> ContextFrame:
+    # 1. Compute time context
+    # is_commute_window: 07:00–09:30 or 17:30–20:00 local time
+    hour = when.hour
+    minute = when.minute
+    time_float = hour + (minute / 60.0)
+
+    is_commute_window = (7.0 <= time_float <= 9.5) or (17.5 <= time_float <= 20.0)
+
+    # 2-6. Call adapters
+    t, h, w, p = ForecastAdapter().fetch(lat, lon, when)
+    warnings = WarningAdapter().fetch(lat, lon, when)
+    sr, ss = SunAdapter().fetch(lat, lon, when)
+    aqi = AQIAdapter().fetch(lat, lon, when)
+    uv = UVAdapter().fetch(lat, lon, when)
+
+    # is_daylight
+    is_daylight = True
+    if sr.value and ss.value:
+        try:
+            # simple comparison assuming sr and ss are "HH:MM"
+            srh, srm = map(int, sr.value.split(":"))
+            ssh, ssm = map(int, ss.value.split(":"))
+            sr_f = srh + srm / 60.0
+            ss_f = ssh + ssm / 60.0
+            is_daylight = (sr_f <= time_float <= ss_f)
+        except Exception:
+            pass
+    personas = prefs.get("personas", ["default_general"])
+    if not personas:
+        personas = ["default_general"]
+    has_declared_profile = "default_general" not in personas
+
+    return ContextFrame(
+        personas=personas,
+        health_flags=prefs.get("health_flags", []),
+        has_declared_profile=has_declared_profile,
+        local_time=when.isoformat(),
+        is_commute_window=is_commute_window,
+        is_daylight=is_daylight,
+        lat=lat,
+        lon=lon,
+        location_name="Unknown",
+        temp_c=t,
+        humidity_pct=h,
+        wind_kmh=w,
+        precip_prob_pct=p,
+        warnings=warnings,
+        aqi=aqi,
+        uv=uv
+    )
+
+
+
+============================================================
+FILE: backend/db.py
+============================================================
+from contextlib import contextmanager
+from backend.settings import settings
+import psycopg
+from psycopg_pool import ConnectionPool
+
+# Global connection pool
+_pool = None
+
+def init_pool():
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(conninfo=settings.database_url)
+
+def close_pool():
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+@contextmanager
+def get_connection():
+    if _pool is None:
+        # Fallback for standalone scripts / pytest without lifespan
+        with psycopg.connect(settings.database_url) as conn:
+            yield conn
+    else:
+        with _pool.connection() as conn:
+            yield conn
+
+def init_db():
+    """Initializes the database schema using Neon Postgres."""
+    with get_connection() as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS preferences (
+              device_id TEXT PRIMARY KEY,
+              personas TEXT NOT NULL,
+              health_flags TEXT NOT NULL,
+              saved_locations TEXT,
+              updated_at TEXT NOT NULL
+            );
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS signal_cache (
+              cache_key TEXT PRIMARY KEY,
+              value_json TEXT NOT NULL,
+              source TEXT NOT NULL,
+              fetched_at TEXT NOT NULL,
+              confidence REAL NOT NULL,
+              freshness_min INTEGER
+            );
+        ''')
+        conn.commit()
+
+        # In case the table is altered since 14/15/16 docs had a slight difference
+        # Execute each alter sequentially wrapped in a savepoint rollback wrapper
+        for col, col_def in [("confidence", "REAL NOT NULL DEFAULT 1.0"), ("freshness_min", "INTEGER")]:
+            try:
+                with conn.transaction():
+                    conn.execute(f"ALTER TABLE signal_cache ADD COLUMN {col} {col_def};")
+            except psycopg.errors.DuplicateColumn:
+                pass
+
+
+
+============================================================
+FILE: backend/models_api.py
+============================================================
+from pydantic import BaseModel, Field, StringConstraints
+from typing import Annotated
+
+class PreferencesBody(BaseModel):
+    device_id: str = Field(..., min_length=1, max_length=128)
+    personas: list[Annotated[str, StringConstraints(max_length=64)]] = Field(default=[], max_length=20)
+    health_flags: list[Annotated[str, StringConstraints(max_length=64)]] = Field(default=[], max_length=20)
+    saved_locations: list[dict] = Field(default=[], max_length=20)
+
+class SignalRef(BaseModel):
+    signal: str
+    value: int | float | str | None
+    source: str
+
+class WarningResponse(BaseModel):
+    severity: str
+    type: str
+    text: str
+
+class CardResponse(BaseModel):
+    card_id: str
+    title: str
+    priority: str
+    is_alert: bool
+    value_summary: str
+    source: str
+    freshness_badge: str | None = None
+    explanation_ref: str
+
+class HomepageResponse(BaseModel):
+    context_snapshot_id: str
+    generated_at: str
+    cards: list[CardResponse]
+    warnings_override: list[WarningResponse] = []
+    system_notice: str | None = None
+
+class ScoreComponentsRef(BaseModel):
+    persona_weight: float
+    urgency_multiplier: float
+    confidence_factor: float
+
+class ExplainResponse(BaseModel):
+    explanation_ref: str
+    text: str
+    signal_refs: list[SignalRef]
+    score_components: ScoreComponentsRef
+
+
+
+============================================================
+FILE: backend/settings.py
+============================================================
+import os
+from dotenv import load_dotenv
+
+# Load from .env if present
+load_dotenv()
+
+class Settings:
+    def __init__(self):
+        self.adapter_mode = os.getenv("ADAPTER_MODE", "fixture")
+        self.fixture_scenario = os.getenv("FIXTURE_SCENARIO", "normal")
+        self.cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+
+        self.database_url = os.getenv("DATABASE_URL")
+        # Enforce fail-fast misconfiguration protection
+        if not self.database_url:
+            raise ValueError("DATABASE_URL must be configured.")
+
+settings = Settings()
+
+
+
+============================================================
+FILE: backend/routers/explain.py
+============================================================
+from fastapi import APIRouter, HTTPException, Query
+from backend.models_api import ExplainResponse
+from backend.routers.homepage import explain_db
+
+router = APIRouter()
+
+@router.get("/explain", response_model=ExplainResponse)
+async def explain(explanation_ref: str = Query(...)):
+    if explanation_ref not in explain_db:
+        raise HTTPException(status_code=404, detail="explanation_ref not found or expired")
+
+    data = explain_db[explanation_ref]
+    return ExplainResponse(
+        explanation_ref=explanation_ref,
+        text=data["text"],
+        signal_refs=data["signal_refs"],
+        score_components=data["score_components"]
+    )
+
+
+
+============================================================
+FILE: backend/routers/homepage.py
+============================================================
+from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import Dict, Any
+import datetime
+import uuid
+import pytz
+
+from backend.db import get_connection
+from backend.deps import build_context_frame
+from engine.engine import rank
+from backend.models_api import HomepageResponse, CardResponse, WarningResponse
+import json
+
+router = APIRouter()
+
+# Simple global dict for explain references in single process runtime
+explain_db = {}
+
+def get_preferences(device_id: str) -> dict:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT personas, health_flags FROM preferences WHERE device_id = %s
+            """, (device_id,))
+            row = cur.fetchone()
+            if row:
+                return {
+                    "personas": json.loads(row[0]),
+                    "health_flags": json.loads(row[1])
+                }
+            return {
+                "personas": ["default_general"],
+                "health_flags": []
+            }
+
+@router.get("/homepage", response_model=HomepageResponse)
+async def homepage(
+    device_id: str = Query(...),
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180)
+):
+    if not device_id.strip():
+        raise HTTPException(status_code=422, detail="device_id required")
+
+    prefs = get_preferences(device_id)
+    now_ist = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
+
+    # Assemble context via adapters
+    cf = build_context_frame(prefs, lat, lon, now_ist)
+
+    # Run the engine
+    engine_output = rank(cf)
+
+    ctx_id = uuid.uuid4().hex[:8]
+    context_snapshot_id = f"ctx_{ctx_id}"
+
+    # Format cards
+    display_titles = {
+        "severe_warning": "Severe Weather Warning",
+        "aqi_health": "Air Quality",
+        "uv_sun_exposure": "UV Index",
+        "activity_window": "Activity Window",
+        "rain_commute": "Rain & Commute",
+        "sunrise_sunset": "Daylight Hours",
+        "general_conditions": "General Conditions",
+        "pollen_illustrative": "Pollen Levels"
+    }
+
+    cards = []
+    for rc in engine_output.ranked_cards:
+        exp_id = f"exp_{rc.card_id}_{ctx_id}"
+
+        # Populate explanation DB
+        explain_db[exp_id] = {
+            "text": rc.explanation_text,
+            "signal_refs": [{"signal": sr.get("signal", ""), "value": sr.get("value"), "source": sr.get("source", "simulated")} for sr in rc.signal_refs],
+            "score_components": {
+                "persona_weight": rc.score_components.get("persona_weight", 1.0),
+                "urgency_multiplier": rc.score_components.get("urgency_multiplier", 1.0),
+                "confidence_factor": rc.score_components.get("confidence_factor", 1.0)
+            }
+        }
+
+        val_summary = rc.explanation_text.split(" — ")[0] if " — " in rc.explanation_text else rc.explanation_text
+
+        c_res = CardResponse(
+            card_id=rc.card_id,
+            title=display_titles.get(rc.card_id, "Mausam Info"),
+            priority=rc.priority,
+            is_alert=rc.is_alert,
+            value_summary=val_summary,
+            source=rc.signal_refs[0].get("source", "simulated") if rc.signal_refs else "simulated",
+            freshness_badge=None,
+            explanation_ref=exp_id
+        )
+        cards.append(c_res)
+
+    warnings_override = []
+    for w_card in engine_output.override_warnings:
+        w = w_card.signal_refs[0].get("value", {}) if w_card.signal_refs else {}
+        if w:
+            warnings_override.append(WarningResponse(
+                severity=w.get("severity", "severe"),
+                type=w.get("type", "Unknown"),
+                text=w.get("text", "")
+            ))
+
+    # Identify if everything is unavailable
+    # The engine guarantees at least one card (general_conditions) for fallback,
+    # so we must check if all output sources are unavailable.
+    all_unavailable = True
+    if engine_output.override_warnings:
+        all_unavailable = False
+    else:
+        for rc in engine_output.ranked_cards:
+            if rc.card_id in ["sunrise_sunset", "general_conditions"]:
+                continue
+            if rc.signal_refs:
+                for sr in rc.signal_refs:
+                    if sr.get("source") != "unavailable":
+                        all_unavailable = False
+                        break
+
+    system_notice = "All data sources unavailable. Displaying degraded view." if all_unavailable else None
+
+    return HomepageResponse(
+        context_snapshot_id=context_snapshot_id,
+        generated_at=now_ist.isoformat(),
+        cards=cards,
+        warnings_override=warnings_override,
+        system_notice=system_notice
+    )
+
+
+
+============================================================
+FILE: backend/routers/preferences.py
+============================================================
+from fastapi import APIRouter
+from backend.db import get_connection
+import json, datetime
+from backend.models_api import PreferencesBody
+
+router = APIRouter()
+
+@router.get("/preferences")
+def read_preferences(device_id: str):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM preferences WHERE device_id=%s", (device_id,))
+            row = cur.fetchone()
+            if row is None:
+                return {"device_id": device_id, "personas": ["default_general"], "health_flags": [], "saved_locations": []}
+            return {
+                "device_id": row[0],
+                "personas": json.loads(row[1]),
+                "health_flags": json.loads(row[2]),
+                "saved_locations": json.loads(row[3] or "[]"),
+            }
+
+@router.put("/preferences")
+def write_preferences(body: PreferencesBody):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO preferences (device_id, personas, health_flags, saved_locations, updated_at)
+                   VALUES (%s, %s, %s, %s, %s)
+                   ON CONFLICT(device_id) DO UPDATE SET
+                     personas=EXCLUDED.personas, health_flags=EXCLUDED.health_flags,
+                     saved_locations=EXCLUDED.saved_locations, updated_at=EXCLUDED.updated_at""",
+                (body.device_id, json.dumps(body.personas), json.dumps(body.health_flags),
+                 json.dumps(body.saved_locations), datetime.datetime.utcnow().isoformat()),
+            )
+        conn.commit()
+    return {"status": "ok"}
+
+
+

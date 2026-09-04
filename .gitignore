@@ -25,3 +25,38 @@ coverage/
 *_debug.txt
 *_results.txt
 tmp_*.txt
+
+# Neon CLI local config (org/project IDs — not credentials but local-only)
+.neon
+
+# Scratch output files generated during development/debugging
+*.log
+eval/detailed_report.txt
+eval/full_log*.txt
+eval/results.log
+report.xml
+results.xml
+all_out.txt
+comp_out*.txt
+multi_out.txt
+out.txt
+out_spike.txt
+spike_out*.txt
+smoke*.log
+errors.txt
+test_out.txt
+test_err.json
+eval_*.txt
+eval_*.log
+pytest*.log
+pytest*.txt
+final_verify_*.log
+audit_*.txt
+raw_roadmap.txt
+test_output.txt
+
+# Temporary external repositories
+temp_external_repo/
+
+# Skills lock (agent tooling, not project source)
+skills-lock.json

@@ -177,6 +177,21 @@ Database  (Neon — 2 tables today → 3-4 tables: preferences, signal_cache,
 
 **O. Estimated Complexity: Medium.** Not technically hard (no new architecture), but requires careful, honest annotation work and real discipline not to write expected labels that match whatever the engine already outputs.
 
+### Phase 1.5 / Intermediate Phase 2 — Engine Recalibration & Foundation Correction
+
+**STATUS: COMPLETED**
+
+*Note: This phase was introduced in the `MAUSAM_REVISED_ROADMAP_CRITICAL_REVIEW.md` as "Phase 2" to address a 15/25 evaluation result. It has been successfully completed and isolated from the rest of the roadmap.*
+
+**Closure Summary:**
+- **Fixture Confidence Defect:** Verified and fixed. `CONFIDENCE_BY_SOURCE` lacked `"fixture"`, defaulting evaluation scenarios to a `0.0` confidence multiplier and inappropriately zeroing out weights. 
+- **Tie-Breaking Defect:** Verified and fixed. In `engine/conflict.py`, cards resolving to the same priority bucket ignored the raw calculated score and fell back to static order improperly. Tie-breaking now checks raw score correctly.
+- **cs_missing Expectation:** Verified. The golden set expectation was updated from `general_conditions` (which correctly suppresses itself when required data is unavailable) to `sunrise_sunset` (the legitimate safe fallback).
+- **Evaluation Result:** The corrected engine achieved 25/25 on the current deterministic golden evaluation set. 
+- **Static Baseline:** The Baseline B (Static Persona Order) achieved 21/25 on the current golden evaluation set. This differs from earlier documentation (which cited 20/25) because the correction to the `cs_missing` expectation in the golden set legitimately affects the static baseline's match rate as well.
+- **Regression Coverage:** Focused regression coverage was explicitly added to `engine/tests/test_phase2_closure.py` covering both the fixture confidence and the raw score tie-breaking to ensure these regressions cannot silently recur.
+- **Outcome:** The originally proposed heavy calibration-bound intervention was **NOT implemented**. Diagnostic evidence conclusively showed the poor score was caused by evaluation/implementation defects, not an architectural failure of the multiplicative scoring model.
+
 ---
 
 ### Phase 2 — Context Model Completion & Health-Condition-Aware Personalization

@@ -47,13 +47,38 @@ EXPLANATION_TEMPLATES: dict[str, str] = {
     "sunrise_sunset": (
         "Sunrise {sunrise_value}, sunset {sunset_value} → shown as {priority_label}."
     ),
+    "visibility_commute": (
+        "Visibility {visibility_value} km{commute_clause} → "
+        "{urgency}× the normal urgency threshold → shown as {priority_label}."
+    ),
+    "destination_alert": (
+        "{warnings_count} active warning(s) at {destinations_count} saved destination(s){delta_clause} → "
+        "shown as {priority_label} for travelers."
+    ),
+    "compound_heat_aqi_danger": (
+        "Combining extreme heat ({temp_value}°C) and dangerous air (AQI {aqi_value}) "
+        "makes outdoor exposure uniquely hazardous → shown as {priority_label}."
+    ),
+    "compound_driving_hazard": (
+        "High rain probability ({precip_value}%) coupled with dense fog ({visibility_value} km visibility) "
+        "dictates extreme caution on roads today natively → shown as {priority_label}."
+    ),
     "general_conditions": (
         "Currently {temp_value}°C, {humidity_value}% humidity, "
-        "wind {wind_value} km/h → shown as {priority_label}."
+        "wind {wind_value} km/h{delta_clause} → shown as {priority_label}."
     ),
     "pollen_illustrative": (
         "Pollen level {pollen_value} [simulated for demo — illustrative only] "
         "→ shown as {priority_label}."
+    ),
+    "agriculture_advisory": (
+        "Soil moisture {soil_value}%, frost risk {frost_status} → shown as {priority_label}."
+    ),
+    "marine_conditions_alert": (
+        "Wave height {wave_value}m, tide {tide_value} → shown as {priority_label}."
+    ),
+    "event_outlook": (
+        "Comfort index {comfort_value}, {forecast_horizon} day outlook → shown as {priority_label}."
     ),
 }
 
@@ -119,6 +144,43 @@ def _persona_clause(cf: ContextFrame, persona_weight: float) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Destination Delta logic (Phase D)
+# ---------------------------------------------------------------------------
+
+def _build_traveler_delta(cf: ContextFrame) -> str:
+    """
+    Returns comparative temperature text for travelers explicitly comparing
+    origins to destinations safely natively.
+    """
+    if "traveler" not in cf.personas and not cf.personas == ["default_general"]:
+        return ""
+        
+    if not hasattr(cf, "destinations") or not cf.destinations:
+        return ""
+        
+    dest = cf.destinations[0]
+    
+    if cf.temp_c.source == "unavailable" or dest.temp_c.source == "unavailable":
+        return ""
+    
+    if cf.temp_c.value is None or getattr(dest.temp_c, "value", None) is None:
+        return ""
+        
+    try:
+        origin_t = float(cf.temp_c.value)
+        dest_t = float(dest.temp_c.value)
+        
+        diff = dest_t - origin_t
+        if abs(diff) < 1.0:
+            return ". Destination temperature is similar to origin."
+        
+        diff_val = round(abs(diff), 1)
+        comparative = "warmer" if diff > 0 else "cooler"
+        return f". Destination is {diff_val}°C {comparative} than origin."
+    except (ValueError, TypeError):
+        return ""
+
+# ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
 
@@ -150,7 +212,11 @@ def build_explanation(
     priority_label  = PRIORITY_LABEL.get(priority, priority)
     urgency         = round(score_components.get("urgency_multiplier", 1.0), 2)
     persona_weight  = score_components.get("persona_weight", 0.0)
-    p_clause        = _persona_clause(cf, persona_weight)
+    health_applied  = score_components.get("health_flags_applied", False)
+    
+    p_clause = _persona_clause(cf, persona_weight)
+    if health_applied:
+        p_clause += " (priority elevated due to your health profile)"
 
     # Build a quick lookup from signal_refs for template substitution.
     refs = {r["signal"]: r["value"] for r in signal_refs}
@@ -208,17 +274,73 @@ def build_explanation(
             priority_label=priority_label,
         )
 
+    if card_id == "visibility_commute":
+        commute_clause = " within your commute window" if cf.is_commute_window else ""
+        return template.format(
+            visibility_value=_fmt(refs.get("visibility_km")),
+            commute_clause=commute_clause,
+            urgency=urgency,
+            priority_label=priority_label,
+        )
+
+    if card_id == "destination_alert":
+        warn_cnt = sum(len(d.warnings) for d in cf.destinations if d.warnings)
+        dest_cnt = sum(1 for d in cf.destinations if d.warnings)
+        return template.format(
+            warnings_count=warn_cnt,
+            destinations_count=dest_cnt,
+            delta_clause=_build_traveler_delta(cf),
+            priority_label=priority_label,
+        )
+
+    if card_id == "compound_heat_aqi_danger":
+        return template.format(
+            temp_value=_fmt(refs.get("temp_c")),
+            aqi_value=_fmt(refs.get("aqi")),
+            priority_label=priority_label,
+        )
+
+    if card_id == "compound_driving_hazard":
+        return template.format(
+            precip_value=_fmt(refs.get("precip_prob_pct")),
+            visibility_value=_fmt(refs.get("visibility_km")),
+            priority_label=priority_label,
+        )
+
     if card_id == "general_conditions":
         return template.format(
             temp_value=_fmt(refs.get("temp_c")),
             humidity_value=_fmt(refs.get("humidity_pct")),
             wind_value=_fmt(refs.get("wind_kmh")),
+            delta_clause=_build_traveler_delta(cf),
             priority_label=priority_label,
         )
 
     if card_id == "pollen_illustrative":
         return template.format(
             pollen_value=_fmt(refs.get("pollen")),
+            priority_label=priority_label,
+        )
+
+    if card_id == "agriculture_advisory":
+        return template.format(
+            soil_value=_fmt(refs.get("soil_moisture_pct")),
+            frost_status="Active" if getattr(cf, "frost_warning_active", False) else "Inactive",
+            priority_label=priority_label,
+        )
+
+    if card_id == "marine_conditions_alert":
+        return template.format(
+            wave_value=_fmt(refs.get("wave_height_m")),
+            tide_value=_fmt(refs.get("tide_status")).title(),
+            priority_label=priority_label,
+        )
+
+    if card_id == "event_outlook":
+        horizon = len(getattr(cf, "extended_forecast", [])) if getattr(cf, "extended_forecast", []) else "no"
+        return template.format(
+            comfort_value=_fmt(getattr(cf, "comfort_index", None)),
+            forecast_horizon=horizon,
             priority_label=priority_label,
         )
 

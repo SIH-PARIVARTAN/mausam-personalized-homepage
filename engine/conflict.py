@@ -41,18 +41,21 @@ def resolve_ties(
         # Rule 1: priority level (P0 < P1 < P2 < P3 numerically).
         priority_rank = _PRIORITY_ORDER.get(c.priority, 99)
 
-        # Rule 2: higher urgency_multiplier wins (negate for ascending sort).
-        urgency = -c.score_components.get("urgency_multiplier", 1.0)
+        # Rule 2: higher final calculated score wins (negate for ascending sort).
+        raw_score = -c.score
 
         # Rule 3: declared-persona card beats a default one (0 < 1).
         not_declared = 0 if c.card_id in declared_persona_card_ids else 1
 
-        # Rule 4: stable ordering from CARD_DEFINITION_ORDER.
+        # Rule 4: higher urgency_multiplier wins if raw score is tied.
+        urgency = -c.score_components.get("urgency_multiplier", 1.0)
+
+        # Rule 5: stable ordering from CARD_DEFINITION_ORDER.
         try:
             definition_pos = CARD_DEFINITION_ORDER.index(c.card_id)
         except ValueError:
             definition_pos = len(CARD_DEFINITION_ORDER)
 
-        return (priority_rank, urgency, not_declared, definition_pos)
+        return (priority_rank, raw_score, not_declared, urgency, definition_pos)
 
     return sorted(cards, key=sort_key)
