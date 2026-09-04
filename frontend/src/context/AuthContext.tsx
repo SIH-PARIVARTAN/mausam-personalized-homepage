@@ -36,14 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Generate or fetch local device_id
     let storedId = localStorage.getItem("mausam_device_id");
     if (!storedId) {
-      storedId = "dev_" + Math.random().toString(36).substring(2, 10);
+      storedId = crypto.randomUUID();
       localStorage.setItem("mausam_device_id", storedId);
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        setDeviceId(`usr_${currentUser.uid.substring(0, 12)}`);
+        setDeviceId(currentUser.uid);
         setIsGuest(false);
       } else {
         const guestFlag = localStorage.getItem("mausam_is_guest") === "true";
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsGuest(true);
     let storedId = localStorage.getItem("mausam_device_id");
     if (!storedId) {
-      storedId = "dev_" + Math.random().toString(36).substring(2, 10);
+      storedId = crypto.randomUUID();
       localStorage.setItem("mausam_device_id", storedId);
     }
     setDeviceId(storedId);
