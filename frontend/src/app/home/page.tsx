@@ -435,7 +435,7 @@ export default function HomePage() {
     if (cid.includes("sunrise") || cid.includes("sunset") || cid.includes("daylight")) {
       return {
         title: "Daylight Hours",
-        bg: "bg-orange-500",
+        bg: "bg-orange-600",
         icon: <Sunrise className="w-5 h-5 text-white" />,
         category: "Sun",
       };
@@ -443,7 +443,7 @@ export default function HomePage() {
     if (cid.includes("aqi")) {
       return {
         title: "Air Quality Index",
-        bg: "bg-teal-500",
+        bg: "bg-teal-600",
         icon: <Wind className="w-5 h-5 text-white" />,
         category: "Air Quality",
       };
@@ -459,7 +459,7 @@ export default function HomePage() {
     if (cid.includes("activity") || cid.includes("fitness") || cid.includes("exercise")) {
       return {
         title: "Exercise & Workout",
-        bg: "bg-amber-500",
+        bg: "bg-amber-600",
         icon: <Activity className="w-5 h-5 text-white" />,
         category: "Fitness",
       };
@@ -467,7 +467,7 @@ export default function HomePage() {
     if (cid.includes("uv") || cid.includes("sun") || cid.includes("skincare")) {
       return {
         title: "Skincare & Sun",
-        bg: "bg-cyan-500",
+        bg: "bg-cyan-600",
         icon: <Sun className="w-5 h-5 text-white" />,
         category: "Skincare",
       };
@@ -475,7 +475,7 @@ export default function HomePage() {
     if (cid.includes("rain") || cid.includes("commute") || cid.includes("driving")) {
       return {
         title: "Driving & Commute",
-        bg: "bg-sky-500",
+        bg: "bg-sky-600",
         icon: <Car className="w-5 h-5 text-white" />,
         category: "Commute",
       };
@@ -483,15 +483,15 @@ export default function HomePage() {
     if (cid.includes("pollen")) {
       return {
         title: "Pollen Allergen Risk",
-        bg: "bg-purple-500",
+        bg: "bg-purple-600",
         icon: <Flower2 className="w-5 h-5 text-white" />,
         category: "Allergen",
       };
     }
 
     return {
-      title: card.title,
-      bg: "bg-indigo-500",
+      title: "Personal Insights",
+      bg: "bg-indigo-600",
       icon: <CloudSun className="w-5 h-5 text-white" />,
       category: "Personalized",
     };

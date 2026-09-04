@@ -32,11 +32,11 @@
 
   /* Labels — four levels of hierarchy, as iOS defines them. */
   --color-ios-label: #000000;
-  --color-ios-label-2: #3c3c4399;
-  --color-ios-label-3: #3c3c434d;
+  --color-ios-label-2: #3c3c43b3;
+  --color-ios-label-3: #3c3c4366;
   --color-ios-label-dark: #ffffff;
-  --color-ios-label-2-dark: #ebebf599;
-  --color-ios-label-3-dark: #ebebf54d;
+  --color-ios-label-2-dark: #ebebf5b3;
+  --color-ios-label-3-dark: #ebebf566;
 
   /* Semantic */
   --color-ios-green: #34c759;
@@ -195,7 +195,7 @@ body {
 }
 
 /* Row divider for grouped lists — inset from the leading edge like iOS. */
-.ios-divide > * + * {
+.ios-divide>*+* {
   border-top: 0.5px solid var(--ios-separator);
 }
 
@@ -295,6 +295,7 @@ body {
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -309,27 +310,24 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.6) 50%,
-    transparent 100%
-  );
+  background-image: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 100%);
   animation: ios-shimmer 1.5s var(--ease-ios-out) infinite;
 }
 
 .dark .ios-shimmer::after {
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
+  background-image: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 100%);
 }
 
 /* Respect the OS "reduce motion" setting — required for accessibility, and iOS
    users who enable it expect it to be honoured. */
 @media (prefers-reduced-motion: reduce) {
+
   .ios-shimmer::after,
   .animate-pulse,
   .animate-spin {
@@ -478,7 +476,7 @@ body {
   z-index: 10;
 }
 
-.features-grid:hover > .feature-card:not(:hover) {
+.features-grid:hover>.feature-card:not(:hover) {
   filter: blur(3px);
   transform: scale(0.96);
   opacity: 0.7;
@@ -630,7 +628,8 @@ body {
   align-items: center;
   justify-content: center;
 }
-.avatar > div {
+
+.avatar>div {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -639,7 +638,7 @@ body {
   overflow: hidden;
 }
 
-.avatar > div svg {
+.avatar>div svg {
   display: block;
   flex-shrink: 0;
 }
@@ -649,6 +648,7 @@ body {
   background-color: var(--color-ios-blue);
   color: #ffffff;
 }
+
 .dark .chat-bubble-primary {
   background-color: var(--color-ios-blue-dark);
   color: #ffffff;
@@ -668,6 +668,7 @@ body {
   background-color: #48484a;
   color: #ffffff;
 }
+
 .dark .chat-bubble-neutral {
   background-color: #2c2c2e;
   color: #ffffff;
@@ -692,4 +693,3 @@ body {
   background-color: var(--color-ios-red);
   color: #ffffff;
 }
-

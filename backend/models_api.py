@@ -17,6 +17,7 @@ class PersonaEnum(str, Enum):
 class HealthFlagEnum(str, Enum):
     respiratory_sensitive = "respiratory_sensitive"
     heat_sensitive = "heat_sensitive"
+    pollen_interest = "pollen_interest"
 
 class PreferencesBody(BaseModel):
     # Regex accepts UUIDv4 OR legacy 28-char alphanumeric Firebase UID to gracefully support both test and UI contracts.

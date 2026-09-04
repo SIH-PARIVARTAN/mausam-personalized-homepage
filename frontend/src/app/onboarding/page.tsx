@@ -103,9 +103,9 @@ export default function OnboardingPage() {
       gradient: "from-amber-50 to-orange-50 border-amber-200 text-amber-600",
     },
     {
-      id: "beach",
+      id: "beachgoer",
       title: "Beachgoer / Surfer",
-      description: "Tide chart, wave height, sea temp, and swell direction.",
+      description: "Simulated tide, wave height, and sea temp (fixture data).",
       icon: Sun,
       gradient: "from-cyan-50 to-sky-50 border-cyan-200 text-cyan-600",
     },
@@ -126,7 +126,7 @@ export default function OnboardingPage() {
     {
       id: "agriculture",
       title: "Farmer / Gardener",
-      description: "Soil moisture, frost alert, rainfall prediction, and spraying window.",
+      description: "Simulated soil moisture and frost alerts (fixture data).",
       icon: Flower2,
       gradient: "from-lime-50 to-emerald-50 border-lime-200 text-lime-700",
     },
@@ -138,9 +138,9 @@ export default function OnboardingPage() {
       gradient: "from-purple-50 to-indigo-50 border-purple-200 text-purple-600",
     },
     {
-      id: "event",
+      id: "event_planner",
       title: "Event Planner",
-      description: "10-day forecast, rain probability, best timings, and wind risk.",
+      description: "Comfort index tracking and severe weather safety.",
       icon: Sparkles,
       gradient: "from-rose-50 to-pink-50 border-rose-200 text-rose-600",
     },
@@ -202,8 +202,8 @@ export default function OnboardingPage() {
                       type="button"
                       onClick={() => togglePersona(p.id)}
                       className={`relative p-5 rounded-2xl border text-left transition-all flex flex-col justify-between group cursor-pointer ${isSelected
-                          ? `bg-sky-50/60 border-sky-500 ring-2 ring-sky-500/30 shadow-md shadow-sky-900/5`
-                          : `bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50`
+                        ? `bg-sky-50/60 border-sky-500 ring-2 ring-sky-500/30 shadow-md shadow-sky-900/5`
+                        : `bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50`
                         }`}
                     >
                       {isSelected && (
@@ -243,8 +243,8 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => toggleHealthFlag("respiratory_sensitive")}
                     className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-3 transition-all ${selectedHealthFlags.includes("respiratory_sensitive")
-                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                       }`}
                   >
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${selectedHealthFlags.includes("respiratory_sensitive") ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
@@ -264,8 +264,8 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => toggleHealthFlag("pollen_interest")}
                     className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-3 transition-all ${selectedHealthFlags.includes("pollen_interest")
-                        ? "bg-teal-600 text-white border-teal-600 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                      ? "bg-teal-600 text-white border-teal-600 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                       }`}
                   >
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${selectedHealthFlags.includes("pollen_interest") ? "bg-white/20 text-white" : "bg-teal-100 text-teal-700"

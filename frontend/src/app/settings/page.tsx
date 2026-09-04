@@ -175,9 +175,9 @@ export default function SettingsPage() {
       color: "text-amber-600 bg-amber-50 border-amber-200",
     },
     {
-      id: "beach",
+      id: "beachgoer",
       title: "Beachgoer / Surfer",
-      description: "Tide chart, wave height, sea temp, and swell direction.",
+      description: "Simulated tide, wave height, and sea temp (fixture data).",
       icon: Sun,
       color: "text-cyan-600 bg-cyan-50 border-cyan-200",
     },
@@ -198,7 +198,7 @@ export default function SettingsPage() {
     {
       id: "agriculture",
       title: "Farmer / Gardener",
-      description: "Soil moisture, frost alert, rainfall prediction, and spray window.",
+      description: "Simulated soil moisture and frost alerts (fixture data).",
       icon: Flower2,
       color: "text-lime-700 bg-lime-50 border-lime-200",
     },
@@ -210,9 +210,9 @@ export default function SettingsPage() {
       color: "text-purple-600 bg-purple-50 border-purple-200",
     },
     {
-      id: "event",
+      id: "event_planner",
       title: "Event Planner",
-      description: "10-day forecast, rain probability, best timings, and wind risk.",
+      description: "Comfort index tracking and severe weather safety.",
       icon: Sparkles,
       color: "text-rose-600 bg-rose-50 border-rose-200",
     },
@@ -350,11 +350,10 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setTheme("light")}
-              className={`p-4 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
-                !isDark
-                  ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500 text-amber-950 dark:text-amber-200 shadow-sm"
-                  : "bg-slate-50 dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
-              }`}
+              className={`p-4 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${!isDark
+                ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500 text-amber-950 dark:text-amber-200 shadow-sm"
+                : "bg-slate-50 dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl transition-colors ${!isDark ? "bg-amber-500 text-white" : "bg-amber-100/80 dark:bg-amber-950/40 text-amber-600"}`}>
@@ -375,11 +374,10 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setTheme("dark")}
-              className={`p-4 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
-                isDark
-                  ? "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500 text-sky-950 dark:text-sky-200 shadow-sm"
-                  : "bg-slate-50 dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
-              }`}
+              className={`p-4 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${isDark
+                ? "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500 text-sky-950 dark:text-sky-200 shadow-sm"
+                : "bg-slate-50 dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl transition-colors ${isDark ? "bg-sky-500 text-white" : "bg-sky-100/80 dark:bg-sky-950/40 text-sky-400"}`}>
@@ -448,11 +446,10 @@ export default function SettingsPage() {
                   key={p.id}
                   type="button"
                   onClick={() => togglePersona(p.id)}
-                  className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
-                    isSelected
-                      ? "bg-sky-50/60 dark:bg-sky-950/30 border-sky-500 ring-2 ring-sky-500/30 shadow-md shadow-sky-900/5"
-                      : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c] hover:bg-slate-50 dark:hover:bg-[#252528]"
-                  }`}
+                  className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${isSelected
+                    ? "bg-sky-50/60 dark:bg-sky-950/30 border-sky-500 ring-2 ring-sky-500/30 shadow-md shadow-sky-900/5"
+                    : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c] hover:bg-slate-50 dark:hover:bg-[#252528]"
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className={`p-2.5 rounded-xl border ${p.color}`}>
@@ -492,29 +489,26 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => toggleHealthFlag("respiratory_sensitive")}
-              className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 cursor-pointer ${
-                selectedHealthFlags.includes("respiratory_sensitive")
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                  : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
-              }`}
+              className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 cursor-pointer ${selectedHealthFlags.includes("respiratory_sensitive")
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
+                : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
+                }`}
             >
               <div
-                className={`p-2 rounded-xl shrink-0 ${
-                  selectedHealthFlags.includes("respiratory_sensitive")
-                    ? "bg-white/20 text-white"
-                    : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
-                }`}
+                className={`p-2 rounded-xl shrink-0 ${selectedHealthFlags.includes("respiratory_sensitive")
+                  ? "bg-white/20 text-white"
+                  : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                  }`}
               >
                 <Wind className="w-5 h-5" />
               </div>
               <div className="flex-1">
                 <div className="font-bold text-sm text-slate-900 dark:text-white">Asthma & Respiratory Sensitivity</div>
                 <p
-                  className={`text-xs mt-0.5 leading-relaxed font-medium ${
-                    selectedHealthFlags.includes("respiratory_sensitive")
-                      ? "text-emerald-100"
-                      : "text-slate-500 dark:text-[#8e8e93]"
-                  }`}
+                  className={`text-xs mt-0.5 leading-relaxed font-medium ${selectedHealthFlags.includes("respiratory_sensitive")
+                    ? "text-emerald-100"
+                    : "text-slate-500 dark:text-[#8e8e93]"
+                    }`}
                 >
                   Applies a 1.8× urgency multiplier on AQI cards when PM2.5 or PM10 exceeds moderate levels.
                 </p>
@@ -524,29 +518,26 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => toggleHealthFlag("pollen_interest")}
-              className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 cursor-pointer ${
-                selectedHealthFlags.includes("pollen_interest")
-                  ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20"
-                  : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
-              }`}
+              className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 cursor-pointer ${selectedHealthFlags.includes("pollen_interest")
+                ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20"
+                : "bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-[#2c2c2e] hover:border-slate-300 dark:hover:border-[#3a3a3c]"
+                }`}
             >
               <div
-                className={`p-2 rounded-xl shrink-0 ${
-                  selectedHealthFlags.includes("pollen_interest")
-                    ? "bg-white/20 text-white"
-                    : "bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300"
-                }`}
+                className={`p-2 rounded-xl shrink-0 ${selectedHealthFlags.includes("pollen_interest")
+                  ? "bg-white/20 text-white"
+                  : "bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300"
+                  }`}
               >
                 <Flower2 className="w-5 h-5" />
               </div>
               <div className="flex-1">
                 <div className="font-bold text-sm text-slate-900 dark:text-white">Pollen & Seasonal Allergens</div>
                 <p
-                  className={`text-xs mt-0.5 leading-relaxed font-medium ${
-                    selectedHealthFlags.includes("pollen_interest")
-                      ? "text-teal-100"
-                      : "text-slate-500 dark:text-[#8e8e93]"
-                  }`}
+                  className={`text-xs mt-0.5 leading-relaxed font-medium ${selectedHealthFlags.includes("pollen_interest")
+                    ? "text-teal-100"
+                    : "text-slate-500 dark:text-[#8e8e93]"
+                    }`}
                 >
                   Enables pollen risk cards and elevates springtime allergen guidance alerts.
                 </p>
@@ -577,22 +568,20 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => handleTempUnitChange("c")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    tempUnit === "c"
-                      ? "bg-sky-500 text-white shadow-xs"
-                      : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${tempUnit === "c"
+                    ? "bg-sky-500 text-white shadow-xs"
+                    : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
+                    }`}
                 >
                   °C
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTempUnitChange("f")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    tempUnit === "f"
-                      ? "bg-sky-500 text-white shadow-xs"
-                      : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${tempUnit === "f"
+                    ? "bg-sky-500 text-white shadow-xs"
+                    : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
+                    }`}
                 >
                   °F
                 </button>
@@ -608,22 +597,20 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => handleWindUnitChange("kmh")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    windUnit === "kmh"
-                      ? "bg-sky-500 text-white shadow-xs"
-                      : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${windUnit === "kmh"
+                    ? "bg-sky-500 text-white shadow-xs"
+                    : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
+                    }`}
                 >
                   km/h
                 </button>
                 <button
                   type="button"
                   onClick={() => handleWindUnitChange("mph")}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    windUnit === "mph"
-                      ? "bg-sky-500 text-white shadow-xs"
-                      : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${windUnit === "mph"
+                    ? "bg-sky-500 text-white shadow-xs"
+                    : "text-slate-600 dark:text-[#8e8e93] hover:text-slate-900 dark:hover:text-white"
+                    }`}
                 >
                   mph
                 </button>
